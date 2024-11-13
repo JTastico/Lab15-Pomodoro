@@ -32,14 +32,14 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     val currentPhase: LiveData<Phase> = _currentPhase
 
     private var countDownTimer: CountDownTimer? = null
-    private var timeRemainingInMillis: Long = 25 * 60 * 1000L // Tiempo inicial para FOCUS
+    private var timeRemainingInMillis: Long = 1 * 60 * 1000L // Tiempo inicial para FOCUS
 
     // Función para iniciar la sesión de concentración
     fun startFocusSession() {
         _currentPhase.value = Phase.FOCUS
         timeRemainingInMillis = 25 * 60 * 1000L // Ajusta a 2 minutos para pruebas
         _timeLeft.value = "02:00"
-        showNotification("Inicio de Concentración", "La sesión de concentración ha comenzado.")
+        showNotification("Inicio de Concentración Tiempo", "La sesión de concentración ha comenzado. ver el tiempo")
         startTimer()
     }
 
