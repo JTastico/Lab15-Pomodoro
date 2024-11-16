@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center"
+    android:background="@android:color/white">
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/notification_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pomodoro"
+        android:textSize="18sp"
+        android:textColor="@color/red_pomodoro"
+        android:gravity="center" />
+
+    <!-- Temporizador -->
+    <TextView
+        android:id="@+id/notification_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textSize="32sp"
+        android:textColor="@color/red_pomodoro"
+        android:gravity="center"
+        android:textStyle="bold" />
+
+</LinearLayout>
