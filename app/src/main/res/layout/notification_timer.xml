@@ -1,31 +1,63 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center"
-    android:background="@android:color/white">
+    android:background="@color/dark_background"
+    android:padding="16dp">
 
-    <!-- Título -->
+    <!-- Contenedor para la barra de progreso personalizada -->
+    <ProgressBar
+        android:id="@+id/notification_progress"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:indeterminate="false"
+        android:progressDrawable="@drawable/custom_progress_bar"
+        android:max="100"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_centerHorizontal="true" />
+
+    <!-- Título de la notificación -->
     <TextView
         android:id="@+id/notification_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Pomodoro"
-        android:textSize="18sp"
-        android:textColor="@color/red_pomodoro"
-        android:gravity="center" />
+        android:text="@string/tiempo_de_pomodoro"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/notification_progress"
+        android:layout_marginTop="8dp" />
 
-    <!-- Temporizador -->
+    <!-- Contador del temporizador -->
     <TextView
         android:id="@+id/notification_timer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="00:00"
-        android:textSize="32sp"
-        android:textColor="@color/red_pomodoro"
-        android:gravity="center"
-        android:textStyle="bold" />
+        android:text="25:00"
+        android:textSize="24sp"
+        android:textColor="@color/white"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/notification_title"
+        android:layout_marginTop="4dp" />
 
-</LinearLayout>
+    <!-- Botón de pausa -->
+    <ImageView
+        android:id="@+id/ic_pause"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_pause"
+        android:contentDescription="@string/pausa"/>
+
+    <!-- Botón de detener -->
+    <ImageView
+        android:id="@+id/ic_stop"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_stop"
+        android:contentDescription="@string/detener"/>
+</RelativeLayout>

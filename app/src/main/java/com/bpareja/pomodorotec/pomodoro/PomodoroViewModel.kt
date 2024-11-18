@@ -19,7 +19,6 @@ import com.bpareja.pomodorotec.R
 enum class Phase {
     FOCUS, BREAK
 }
-
 class PomodoroViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
@@ -43,27 +42,37 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     val currentPhase: LiveData<Phase> = _currentPhase
 
     private var countDownTimer: CountDownTimer? = null
-    private var timeRemainingInMillis: Long = 25 * 60 * 1000L // Tiempo inicial para FOCUS
+    private var timeRemainingInMillis: Long = 1 * 60 * 1000L // Tiempo inicial para FOCUS
     private var isPaused = false // Variable para controlar el estado de pausa
+
+    var initialTimeInMillis: Long = 0
+
 
 
     // Función para iniciar la sesión de concentración
+    private val FOCUS_TIME_IN_MILLIS: Long = 1 * 60 * 1000 // 25 minutos
+    private val BREAK_TIME_IN_MILLIS: Long = 1 * 60 * 1000 // 5 minutos
+
+
+
     fun startFocusSession() {
         _currentPhase.value = Phase.FOCUS
-        timeRemainingInMillis = 25 * 60 * 1000L // 25 minutos de concentración
+        initialTimeInMillis = FOCUS_TIME_IN_MILLIS // Establece el tiempo inicial de la fase de concentración
+        timeRemainingInMillis = FOCUS_TIME_IN_MILLIS
         _timeLeft.value = "25:00"
-        showNotification("Inicio de Concentración", "La sesión de concentración ha comenzado.")
+        showNotification("Inicio de Concentración", "25:00", 0)
         startTimer()
     }
 
-    // Función para iniciar la sesión de descanso
-    private fun startBreakSession() {
+    fun startBreakSession() {
         _currentPhase.value = Phase.BREAK
-        timeRemainingInMillis = 5 * 60 * 1000L // 5 minutos de descanso
+        initialTimeInMillis = BREAK_TIME_IN_MILLIS // Establece el tiempo inicial de la fase de descanso
+        timeRemainingInMillis = BREAK_TIME_IN_MILLIS
         _timeLeft.value = "05:00"
-        showNotification("Inicio de Descanso", "La sesión de descanso ha comenzado.")
+        showNotification("Inicio de Descanso", "05:00", 0)
         startTimer()
     }
+
 
     // Inicia o reanuda el temporizador
     fun startTimer() {
@@ -75,10 +84,14 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 val minutes = (millisUntilFinished / 1000) / 60
                 val seconds = (millisUntilFinished / 1000) % 60
                 val timeText = String.format("%02d:%02d", minutes, seconds)
-                // Actualiza el tiempo restante en el LiveData
+
+                // Calcula el progreso basado en la fase actual
+                val progress = ((initialTimeInMillis - millisUntilFinished).toFloat() / initialTimeInMillis * 100).toInt()
+
+                // Actualiza el tiempo restante
                 _timeLeft.value = timeText
 
-                // Actualiza la notificación cada segundo sin sonido ni vibración
+                // Actualiza la notificación con el progreso
                 showNotification(
                     title = when (_currentPhase.value) {
                         Phase.FOCUS -> "Tiempo de concentración"
@@ -86,9 +99,13 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                         else -> "Pomodoro"
                     },
                     timeRemainingText = timeText,
-                    playSound = false // Sin sonido ni vibración durante la actualización por segundo
+                    progress = progress,
+                    playSound = false
                 )
             }
+
+
+
 
             override fun onFinish() {
                 _isRunning.value = false
@@ -103,7 +120,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     Phase.BREAK -> {
                         _currentPhase.value = Phase.FOCUS
                         timeRemainingInMillis = 25 * 60 * 1000L // Duración de concentración
-                        _timeLeft.value = "25:00"
+                        _timeLeft.value = "1:00"
                     }
                     else -> {}
                 }
@@ -153,13 +170,21 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         _isRunning.value = false
         isPaused = false
         _currentPhase.value = Phase.FOCUS
-        timeRemainingInMillis = 25 * 60 * 1000L // Restablece a 25 minutos
+        timeRemainingInMillis = FOCUS_TIME_IN_MILLIS
         _timeLeft.value = "25:00"
+
+        // Actualiza la notificación para reflejar el estado detenido
+        showNotification(
+            title = "Pomodoro Detenido",
+            timeRemainingText = "25:00",
+            progress = 0
+        )
     }
+
 
     // Muestra la notificación
     @SuppressLint("RemoteViewLayout")
-    private fun showNotification(title: String, timeRemainingText: String, playSound: Boolean = false) {
+    private fun showNotification(title: String, timeRemainingText: String, progress: Int = 0, playSound: Boolean = false) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -167,14 +192,13 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             context, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Acción para pausar o reanudar
+        // Acciones para los botones
         val toggleIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = "ACTION_TOGGLE_PAUSE_RESUME"
         }
         val togglePendingIntent = PendingIntent.getBroadcast(
             context, 0, toggleIntent, PendingIntent.FLAG_IMMUTABLE
         )
-
 
         val stopIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = "ACTION_STOP"
@@ -187,28 +211,35 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         val notificationLayout = RemoteViews(context.packageName, R.layout.notification_timer)
         notificationLayout.setTextViewText(R.id.notification_title, title)
         notificationLayout.setTextViewText(R.id.notification_timer, timeRemainingText)
+        notificationLayout.setProgressBar(R.id.notification_progress, 100, progress, false)
+
+        //Determinar valor de boton pause
+        val pauseResumeText = when {
+            !_isRunning.value!! -> "Iniciar" // Cuando el temporizador está detenido
+            isPaused -> "Reanudar"          // Cuando está pausado
+            else -> "Pausa"                 // Cuando está corriendo
+        }
 
         val builder = NotificationCompat.Builder(context, MainActivity.CHANNEL_ID)
             .setSmallIcon(R.drawable.pomodoro)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(notificationLayout)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle()) // Usa el estilo personalizado
+            .setCustomContentView(notificationLayout) // Configura el layout para la notificación
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .addAction(
-                R.drawable.ic_pause,
-                if (isPaused) "Reanudar" else "Pausa", // Cambia el texto según el estado
-                togglePendingIntent // Botón para pausar o reanudar
-            )
+            .addAction(R.drawable.ic_pause, pauseResumeText, togglePendingIntent) // Botón de Pausa
             .addAction(R.drawable.ic_stop, "Detener", stopPendingIntent) // Botón de Detener
 
-// Configuración de sonido y vibración
+            // Agrega la barra de progreso
+            .setProgress(100, progress, false) // Establece el progreso (valor de 0 a 100)
+
+        // Configuración de sonido y vibración
         if (!playSound) {
             builder.setOnlyAlertOnce(true)
+            builder.setVibrate(longArrayOf(0, 500, 500, 500))
         } else {
             builder.setVibrate(longArrayOf(0, 500, 500, 500))
         }
-
 
         with(NotificationManagerCompat.from(context)) {
             if (ActivityCompat.checkSelfPermission(
@@ -221,4 +252,5 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             notify(MainActivity.NOTIFICATION_ID, builder.build())
         }
     }
+
 }
